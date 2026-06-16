@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QDPSK Receiver</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>QDPSK Receiver</h1>
+      <p id="endpoint">UDP 127.0.0.1:9000</p>
+    </div>
+    <div class="status-strip">
+      <span id="statusBadge" class="status-badge">stopped</span>
+      <span id="lastUpdate">waiting</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="band summary-grid">
+      <div class="metric">
+        <span>最新帧</span>
+        <strong id="frameId">--</strong>
+      </div>
+      <div class="metric">
+        <span>捕获目录</span>
+        <strong id="captureDir">--</strong>
+      </div>
+      <div class="metric">
+        <span>最近分析</span>
+        <strong id="analysisTime">--</strong>
+      </div>
+      <div class="actions">
+        <button id="startBtn" type="button">Start</button>
+        <button id="stopBtn" type="button">Stop</button>
+        <button id="analyzeBtn" type="button">Analyze Latest</button>
+      </div>
+    </section>
+
+    <section class="band">
+      <div class="section-head">
+        <h2>接收进度</h2>
+        <span id="firstHeader">等待首个包头</span>
+      </div>
+      <div class="progress-grid">
+        <div class="progress-panel">
+          <div class="progress-title">
+            <strong>QPSK</strong>
+            <span id="qpskProgressText">0 / 0</span>
+          </div>
+          <div class="progress-track"><div id="qpskProgressBar"></div></div>
+        </div>
+        <div class="progress-panel">
+          <div class="progress-title">
+            <strong>QDPSK</strong>
+            <span id="qdpskProgressText">0 / 0</span>
+          </div>
+          <div class="progress-track"><div id="qdpskProgressBar"></div></div>
+        </div>
+      </div>
+      <pre id="errorBox" class="error-box" hidden></pre>
+    </section>
+
+    <section class="band">
+      <div class="section-head">
+        <h2>图像恢复</h2>
+        <a id="reportLink" href="/reports/latest_capture_report.html" target="_blank">静态报告</a>
+      </div>
+      <div class="image-grid">
+        <figure>
+          <figcaption>原始图像 <span>参考</span></figcaption>
+          <img id="referenceImage" src="/reference-image" alt="原始参考图像">
+        </figure>
+        <figure>
+          <figcaption>QPSK 恢复 <span id="qpskQuality">--</span></figcaption>
+          <img id="qpskImage" alt="QPSK recovered image">
+        </figure>
+        <figure>
+          <figcaption>QDPSK 恢复 <span id="qdpskQuality">--</span></figcaption>
+          <img id="qdpskImage" alt="QDPSK recovered image">
+        </figure>
+      </div>
+    </section>
+
+    <section class="band">
+      <div class="section-head">
+        <h2>质量指标</h2>
+      </div>
+      <table class="stats-table">
+        <thead>
+          <tr>
+            <th>指标</th>
+            <th>QPSK</th>
+            <th>QDPSK</th>
+          </tr>
+        </thead>
+        <tbody id="statsBody"></tbody>
+      </table>
+    </section>
+
+    <section class="band">
+      <div class="section-head">
+        <h2>通信分析图</h2>
+      </div>
+      <div id="plotGrid" class="plot-grid"></div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

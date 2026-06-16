@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>发射端</title>
+    <link rel="stylesheet" href="/static/style.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <h1>发射端</h1>
+          <p id="status-line">加载中</p>
+        </div>
+        <div class="target">
+          <span>UDP 目标</span>
+          <strong id="target">--</strong>
+        </div>
+      </header>
+
+      <section class="control-grid">
+        <article class="panel source-panel">
+          <div class="panel-heading">
+            <h2>信源图像</h2>
+            <span id="image-meta">--</span>
+          </div>
+          <div class="source-wrap">
+            <img id="source-image" alt="raw_pic_64.png" src="/source-image">
+          </div>
+        </article>
+
+        <article class="panel controls-panel">
+          <div class="panel-heading">
+            <h2>信道参数</h2>
+            <span>双通道</span>
+          </div>
+          <label class="input-row">
+            <span>目标 IP</span>
+            <input id="target-host" type="text" autocomplete="off">
+          </label>
+          <label class="input-row">
+            <span>目标端口</span>
+            <input id="target-port" type="number" min="1" max="65535" step="1">
+          </label>
+          <label class="slider-row">
+            <span>SNR</span>
+            <input id="snr" type="range" min="6" max="30" step="0.5">
+            <output id="snr-value">--</output>
+          </label>
+          <label class="slider-row">
+            <span>相位</span>
+            <input id="phase" type="range" min="-90" max="90" step="1">
+            <output id="phase-value">--</output>
+          </label>
+          <div class="preset-row" aria-label="phase presets">
+            <span>Phase Presets</span>
+            <button class="preset-button" type="button" data-phase="0">0°</button>
+            <button class="preset-button" type="button" data-phase="30">30°</button>
+            <button class="preset-button" type="button" data-phase="50">50°</button>
+            <button class="preset-button" type="button" data-phase="75">75°</button>
+            <button class="preset-button" type="button" data-phase="-75">-75°</button>
+          </div>
+          <div class="button-row">
+            <button id="render-button" type="button">重绘图表</button>
+            <button id="send-button" type="button">发送 UDP</button>
+          </div>
+        </article>
+
+        <article class="panel stats-panel">
+          <div class="panel-heading">
+            <h2>链路统计</h2>
+            <span id="generated-at">--</span>
+          </div>
+          <dl class="stats">
+            <div><dt>QPSK 符号</dt><dd id="qpsk-symbols">--</dd></div>
+            <div><dt>QDPSK 符号</dt><dd id="qdpsk-symbols">--</dd></div>
+            <div><dt>QPSK 分片</dt><dd id="qpsk-packets">--</dd></div>
+            <div><dt>QDPSK 分片</dt><dd id="qdpsk-packets">--</dd></div>
+            <div><dt>发送字节</dt><dd id="tx-bytes">--</dd></div>
+            <div><dt>发送耗时</dt><dd id="tx-elapsed">--</dd></div>
+            <div><dt>QPSK SNR</dt><dd id="qpsk-snr">--</dd></div>
+            <div><dt>QDPSK SNR</dt><dd id="qdpsk-snr">--</dd></div>
+            <div><dt>图像帧字节</dt><dd id="frame-bytes">--</dd></div>
+            <div><dt>比特数</dt><dd id="bit-count">--</dd></div>
+            <div><dt>QPSK 采样</dt><dd id="qpsk-samples">--</dd></div>
+            <div><dt>QDPSK 采样</dt><dd id="qdpsk-samples">--</dd></div>
+            <div><dt>帧 ID</dt><dd id="frame-id">--</dd></div>
+            <div><dt>当前相位</dt><dd id="phase-stat">--</dd></div>
+          </dl>
+        </article>
+      </section>
+
+      <section class="plot-grid">
+        <article class="plot-panel plot-header">
+          <h2>QPSK</h2>
+        </article>
+        <article class="plot-panel plot-header">
+          <h2>QDPSK</h2>
+        </article>
+
+        <article class="plot-panel">
+          <div class="panel-heading">
+            <h2>信道后星座图</h2>
+            <span id="qpsk-impaired-constellation-count">--</span>
+          </div>
+          <img id="qpsk-impaired-constellation-plot" alt="QPSK channel-impaired constellation">
+        </article>
+        <article class="plot-panel">
+          <div class="panel-heading">
+            <h2>信道后星座图</h2>
+            <span id="qdpsk-impaired-constellation-count">--</span>
+          </div>
+          <img id="qdpsk-impaired-constellation-plot" alt="QDPSK channel-impaired constellation">
+        </article>
+
+        <article class="plot-panel">
+          <div class="panel-heading">
+            <h2>信道后眼图</h2>
+            <span id="qpsk-impaired-eye-count">--</span>
+          </div>
+          <img id="qpsk-impaired-eye-plot" alt="QPSK channel-impaired eye diagram">
+        </article>
+        <article class="plot-panel">
+          <div class="panel-heading">
+            <h2>信道后眼图</h2>
+            <span id="qdpsk-impaired-eye-count">--</span>
+          </div>
+          <img id="qdpsk-impaired-eye-plot" alt="QDPSK channel-impaired eye diagram">
+        </article>
+
+        <article class="plot-panel">
+          <div class="panel-heading">
+            <h2>干净基带功率谱</h2>
+            <span id="qpsk-psd-count">--</span>
+          </div>
+          <img id="qpsk-psd-plot" alt="QPSK transmit baseband power spectral density">
+        </article>
+        <article class="plot-panel">
+          <div class="panel-heading">
+            <h2>干净基带功率谱</h2>
+            <span id="qdpsk-psd-count">--</span>
+          </div>
+          <img id="qdpsk-psd-plot" alt="QDPSK transmit baseband power spectral density">
+        </article>
+
+        <article class="plot-panel">
+          <div class="panel-heading">
+            <h2>干净基带眼图</h2>
+            <span id="qpsk-eye-count">--</span>
+          </div>
+          <img id="qpsk-eye-plot" alt="QPSK transmit baseband eye diagram">
+        </article>
+        <article class="plot-panel">
+          <div class="panel-heading">
+            <h2>干净基带眼图</h2>
+            <span id="qdpsk-eye-count">--</span>
+          </div>
+          <img id="qdpsk-eye-plot" alt="QDPSK transmit baseband eye diagram">
+        </article>
+
+        <article class="plot-panel">
+          <div class="panel-heading">
+            <h2>干净星座图</h2>
+            <span id="qpsk-constellation-count">--</span>
+          </div>
+          <img id="qpsk-constellation-plot" alt="QPSK clean transmit constellation">
+        </article>
+        <article class="plot-panel">
+          <div class="panel-heading">
+            <h2>干净星座图</h2>
+            <span id="qdpsk-constellation-count">--</span>
+          </div>
+          <img id="qdpsk-constellation-plot" alt="QDPSK clean transmit constellation">
+        </article>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

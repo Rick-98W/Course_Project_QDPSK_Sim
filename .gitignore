@@ -1,0 +1,32 @@
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+.env
+
+# IDE / editor metadata
+.idea/
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Runtime logs
+*.log
+
+# Receiver generated runtime outputs
+Receiver/captures/
+Receiver/reports/
+
+# Transmitter generated plots
+Transmitter/static/generated/
+
+# Matplotlib smoke-test artifacts
+Receiver/matplotlib_smoke*.png
+Receiver/matplotlib_smoke*.svg
