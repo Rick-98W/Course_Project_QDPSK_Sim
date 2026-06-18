@@ -321,9 +321,24 @@ def build_tx_plot_zip(result):
     }
     buffer = BytesIO()
     with zipfile.ZipFile(buffer, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr(
+            "metadata.json",
+            json.dumps(_tx_plot_metadata(result), ensure_ascii=False, indent=2),
+        )
         for archive_name, path in plot_paths.items():
             archive.write(Path(path), archive_name)
     return buffer.getvalue()
+
+
+def _tx_plot_metadata(result):
+    channel = result.get("channel", {})
+    udp = result.get("udp", {})
+    return {
+        "snr_db": float(channel.get("snr_db")),
+        "phase_deg": float(channel.get("phase_deg")),
+        "frame_id": int(udp.get("frame_id")),
+        "generated_at": result.get("generated_at"),
+    }
 
 
 def normalize_host(value):

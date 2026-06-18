@@ -18,7 +18,7 @@ from core.network_info import local_ipv4_addresses, tx_target_hint
 from core.packet import CHANNEL_NAMES, FragmentHeader, format_header
 from core.udp_receiver import run_receiver
 from storage.reference_store import reference_available
-from storage.tx_plot_store import copy_tx_plots_to_capture, tx_plot_asset_map
+from storage.tx_plot_store import copy_tx_plots_to_capture, latest_tx_metadata, tx_plot_asset_map
 
 
 @dataclass
@@ -65,6 +65,7 @@ class ReceiverServiceState:
     latest_index_path: str | None = None
     latest_export_path: str | None = None
     latest_tx_plot_received_at: float | None = None
+    latest_tx_params: dict = field(default_factory=dict)
     latest_qpsk_mse: float | None = None
     latest_qpsk_psnr: str | None = None
     latest_qpsk_header_valid: bool | None = None
@@ -99,6 +100,7 @@ class ReceiverServiceState:
             "latest_index_path": self.latest_index_path,
             "latest_export_path": self.latest_export_path,
             "latest_tx_plot_received_at": self.latest_tx_plot_received_at,
+            "latest_tx_params": dict(self.latest_tx_params),
             "latest_qpsk_mse": self.latest_qpsk_mse,
             "latest_qpsk_psnr": self.latest_qpsk_psnr,
             "latest_qpsk_header_valid": self.latest_qpsk_header_valid,
@@ -201,7 +203,13 @@ class ReceiverService:
     def note_tx_plots_received(self) -> None:
         with self._lock:
             self._state.latest_tx_plot_received_at = time.time()
+            self._state.latest_tx_params = latest_tx_metadata()
             self._state.latest_assets.update(tx_plot_asset_map())
+            latest_capture_dir = self._state.latest_capture_dir
+        if latest_capture_dir:
+            assets = copy_tx_plots_to_capture(latest_capture_dir)
+            with self._lock:
+                self._state.latest_assets.update(assets)
 
     def _run(self) -> None:
         with self._lock:
@@ -311,6 +319,9 @@ class ReceiverService:
             self._state.latest_qdpsk_header_valid = bundle.qdpsk_report.header_valid
             self._state.latest_assets = _analysis_assets(bundle)
             self._state.latest_assets.update(copy_tx_plots_to_capture(bundle.capture_dir))
+            self._state.latest_tx_params = latest_tx_metadata(
+                Path(bundle.capture_dir) / "tx_plots"
+            )
             self._state.latest_channel_stats = {
                 "qpsk": _channel_stats(bundle.qpsk_report),
                 "qdpsk": _channel_stats(bundle.qdpsk_report),

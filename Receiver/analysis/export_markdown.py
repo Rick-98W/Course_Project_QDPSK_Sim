@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 import json
 import math
+import re
 from pathlib import Path
 from urllib.parse import quote
 
@@ -44,26 +45,41 @@ def export_capture_markdown(capture_dir: str | Path) -> Path:
         raise FileNotFoundError("capture summary not found: %s" % summary_path)
 
     summary = json.loads(summary_path.read_text(encoding="utf-8"))
-    output_path = capture_dir / "analysis_export.md"
-    output_path.write_text(_render_markdown(capture_dir, summary), encoding="utf-8")
-
-    config.EXPORT_DIR.mkdir(parents=True, exist_ok=True)
-    latest_path = config.EXPORT_DIR / "latest_analysis_export.md"
-    latest_asset_dir = config.EXPORT_DIR / "latest_analysis_assets"
-    _copy_latest_assets(capture_dir, latest_asset_dir)
-    latest_path.write_text(
-        _render_markdown(capture_dir, summary, image_prefix=latest_asset_dir.name),
+    tx_metadata = _load_tx_metadata(capture_dir)
+    export_name = _export_filename(tx_metadata)
+    output_path = capture_dir / export_name
+    output_path.write_text(
+        _render_markdown(capture_dir, summary, tx_metadata=tx_metadata),
         encoding="utf-8",
     )
-    return output_path
+
+    export_dir = _export_directory(tx_metadata)
+    latest_path = export_dir / export_name
+    _copy_latest_assets(capture_dir, export_dir)
+    latest_path.write_text(
+        _render_markdown(
+            capture_dir,
+            summary,
+            image_prefix=".",
+            tx_metadata=tx_metadata,
+        ),
+        encoding="utf-8",
+    )
+    return latest_path
 
 
-def _render_markdown(capture_dir: Path, summary: dict, image_prefix: str = "") -> str:
+def _render_markdown(
+    capture_dir: Path,
+    summary: dict,
+    image_prefix: str = "",
+    tx_metadata: dict | None = None,
+) -> str:
     capture_name = str(summary.get("capture_name") or capture_dir.name)
     analyzed_at = str(summary.get("analyzed_at") or "")
     generated_at = datetime.now().isoformat(timespec="seconds")
     qpsk = summary.get("qpsk", {})
     qdpsk = summary.get("qdpsk", {})
+    tx_metadata = tx_metadata or {}
 
     lines = [
         "# QDPSK 接收分析导出",
@@ -87,6 +103,10 @@ def _render_markdown(capture_dir: Path, summary: dict, image_prefix: str = "") -
         "",
         "## 通信分析图",
         "",
+    ]
+    lines[8:8] = [
+        "| TX SNR | %s |" % _escape_table(_tx_snr_text(tx_metadata)),
+        "| TX Phase | %s |" % _escape_table(_tx_phase_text(tx_metadata)),
     ]
 
     for filename, title in PLOT_FILES:
@@ -192,6 +212,64 @@ def _asset_name(path: Path) -> str:
     if path.parent.name == "tx_plots":
         return "tx_" + path.name
     return path.name
+
+
+def _load_tx_metadata(capture_dir: Path) -> dict:
+    metadata_path = capture_dir / "tx_plots" / "tx_metadata.json"
+    if not metadata_path.is_file():
+        return {}
+    return json.loads(metadata_path.read_text(encoding="utf-8"))
+
+
+def _export_filename(tx_metadata: dict) -> str:
+    snr = _filename_number(tx_metadata.get("snr_db"))
+    phase = _filename_number(tx_metadata.get("phase_deg"))
+    if snr == "--" or phase == "--":
+        return "analysis_export.md"
+    return "%s+%s.md" % (snr, phase)
+
+
+def _export_directory(tx_metadata: dict) -> Path:
+    config.EXPORT_DIR.mkdir(parents=True, exist_ok=True)
+    snr = _filename_number(tx_metadata.get("snr_db"))
+    phase = _filename_number(tx_metadata.get("phase_deg"))
+    if snr == "--" or phase == "--":
+        base = config.EXPORT_DIR / datetime.now().strftime("analysis_%Y%m%d_%H%M%S")
+    else:
+        base = config.EXPORT_DIR / ("%sdB+%sdegree" % (snr, phase))
+    return _create_unique_directory(base)
+
+
+def _create_unique_directory(base: Path) -> Path:
+    try:
+        base.mkdir(parents=True, exist_ok=False)
+        return base
+    except FileExistsError:
+        suffix = datetime.now().strftime("_%Y%m%d_%H%M%S")
+        candidate = base.with_name(base.name + suffix)
+        counter = 2
+        while candidate.exists():
+            candidate = base.with_name("%s%s_%d" % (base.name, suffix, counter))
+            counter += 1
+        candidate.mkdir(parents=True, exist_ok=False)
+        return candidate
+
+
+def _filename_number(value) -> str:
+    if value is None:
+        return "--"
+    text = "%g" % float(value)
+    return re.sub(r"[^0-9A-Za-z.+-]+", "_", text)
+
+
+def _tx_snr_text(tx_metadata: dict) -> str:
+    value = tx_metadata.get("snr_db")
+    return "--" if value is None else "%.1f dB" % float(value)
+
+
+def _tx_phase_text(tx_metadata: dict) -> str:
+    value = tx_metadata.get("phase_deg")
+    return "--" if value is None else "%.0f deg" % float(value)
 
 
 def _number(value) -> str:

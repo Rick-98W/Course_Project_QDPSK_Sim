@@ -88,6 +88,7 @@ function renderState(payload) {
     `${payload.listen_host || "0.0.0.0"}:${payload.listen_port || 9000}`;
   document.getElementById("referenceStatus").textContent =
     payload.reference_available ? "已接收" : "等待 TX 上传";
+  renderTxParams(payload.latest_tx_params || {});
   const referenceImage = document.getElementById("referenceImage");
   if (payload.reference_available) {
     referenceImage.src = withCache("/reference-image");
@@ -105,6 +106,17 @@ function renderState(payload) {
   renderStats(payload.latest_channel_stats || {});
   renderAssets(payload);
   renderError(payload.last_error);
+}
+
+function renderTxParams(params) {
+  document.getElementById("txSnr").textContent =
+    params.snr_db === null || params.snr_db === undefined
+      ? "--"
+      : `${Number(params.snr_db).toFixed(1)} dB`;
+  document.getElementById("txPhase").textContent =
+    params.phase_deg === null || params.phase_deg === undefined
+      ? "--"
+      : `${Number(params.phase_deg).toFixed(0)} deg`;
 }
 
 function renderProgress(prefix, progress) {
