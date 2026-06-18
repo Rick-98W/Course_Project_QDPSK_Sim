@@ -1,98 +1,105 @@
 # QDPSK Transmitter
 
-本目录是 QDPSK 课程设计的发射端工程。当前阶段只负责 Transmitter。
+This is the transmitter-side Python project.
 
-## 运行方式
+Project notes and historical development logs are under:
 
-在 PowerShell 或 PyCharm Terminal 中运行：
-
-```powershell
-conda activate QDRSK_TX_ELB
-cd C:\Users\Rick\PycharmProjects\QDPSK\Transmitter
-python main.py
+```text
+Transmitter/docs/
 ```
 
-然后在浏览器打开：
+Orange Pi migration notes:
+
+```text
+Transmitter/docs/ORANGE_PI_MIGRATION.md
+```
+
+## Run
+
+```powershell
+cd C:\Users\Rick\PycharmProjects\QDPSK\Transmitter
+F:\programs\miniconda3\envs\QDRSK_TX_ELB\python.exe main.py
+```
+
+Open:
 
 ```text
 http://127.0.0.1:8000
 ```
 
-不要直接双击 `templates/index.html`。HTML 页面需要 Python HTTP 服务提供 API、图片和 UDP 发送逻辑。
+Do not open `web/templates/index.html` directly. The page needs the Python HTTP API for fixed image serving, plot generation, reference-image sync, and UDP sending.
 
-## 当前功能
+## Current Workflow
 
-- 读取 `raw_pic_64.png`
-- 构造 `IMG0` 图像帧
-- 转 bitstream
-- 同时生成 QPSK / QDPSK 两路符号
-- RRC 基带成型
-- 对两路波形施加相同 SNR 和 Phase
-- 生成页面图表
-- 按 `complex64` 采样级 IQ 分片 UDP 发送
-
-## 页面图表
-
-页面左列是 QPSK，右列是 QDPSK。
+1. Open the TX web page.
+2. TX immediately loads the fixed source image:
 
 ```text
-信道后星座图     会随 SNR / Phase 改变
-信道后眼图       会随 SNR / Phase 改变
-干净基带功率谱   发端参考图，不受 SNR / Phase 影响
-干净基带眼图     发端参考图，不受 SNR / Phase 影响
-干净星座图       发端参考图，不受 SNR / Phase 影响
+Transmitter/raw_pic_64.png
 ```
 
-图表文字使用中文黑体优先：
+3. TX renders the channel-pre reference plots.
+4. Click `Send UDP`.
+5. TX uploads the fixed reference PNG to RX:
 
 ```text
-SimHei
-Microsoft YaHei
+POST http://<target_host>:<target_port + 100>/api/reference-image
 ```
 
-## 默认参数
+For the default UDP target `127.0.0.1:9000`, the reference upload target is:
+
+```text
+http://127.0.0.1:9100/api/reference-image
+```
+
+6. TX applies SNR / phase, renders channel-post plots, fragments the `complex64` IQ, and sends UDP packets.
+
+## Plot Naming
+
+Use `信道前` instead of `干净`.
+
+```text
+信道前基带功率谱   transmitter-side reference, not affected by SNR / phase
+信道前基带眼图     transmitter-side reference, not affected by SNR / phase
+信道前星座图       transmitter-side reference, not affected by SNR / phase
+信道后星座图       rendered after Send UDP, affected by SNR / phase
+信道后眼图         rendered after Send UDP, affected by SNR / phase
+```
+
+The PNG filenames are kept stable for now:
+
+```text
+qpsk_psd.png
+qdpsk_psd.png
+qpsk_eye.png
+qdpsk_eye.png
+qpsk_constellation.png
+qdpsk_constellation.png
+qpsk_impaired_constellation.png
+qdpsk_impaired_constellation.png
+qpsk_impaired_eye.png
+qdpsk_impaired_eye.png
+```
+
+## Defaults
 
 ```text
 TARGET_HOST = 127.0.0.1
 TARGET_PORT = 9000
+WEB_HOST = 0.0.0.0
 WEB_PORT = 8000
 SNR_DB = 20.0
 PHASE_DEG = 0.0
-SAMPLES_PER_SYMBOL = 8
-RRC_BETA = 0.35
-RRC_SPAN = 8
-UDP_FRAGMENT_PAYLOAD_BYTES = 1400
-UDP_INTER_PACKET_DELAY_SEC = 0.0
+SNR range = -3.0 .. 30.0 dB
+Phase range = -90 .. +90 deg
 ```
 
-页面中可以临时修改 UDP 目标 IP、端口、SNR 和 Phase。当前修改只保存在运行时，不写回 `config.py`。
+The page can change UDP target IP, target port, SNR, and phase at runtime. These runtime edits are not written back to `config.py`.
 
-## 重要边界
+## Boundaries
 
-- UDP 发送的是 RRC 成型后、信道污染后的采样级数字基带 I/Q。
-- UDP 不发送原图 bytes。
-- UDP 不发送 bitstream。
-- QPSK 和 QDPSK 必须每次同时执行、同时发包。
-- 香橙派部署等 Receiver 开发和 PC 本机联调成功后再做。
-# Current Implementation Notes - 2026-06-15
-
-Current demo image boundary:
-
-```text
-source image: raw_pic_64.png
-dimensions: 64x64
-channels: RGB / 3
-raw payload bytes: 12288
-image frame bytes: 12297
-```
-
-The current end-to-end demo does not support arbitrary image dimensions. The Receiver fallback path also assumes `64x64x3` RGB when a noisy channel damages the `IMG0` header.
-
-Current demo parameter limits:
-
-```text
-SNR:   6.0 .. 30.0 dB
-Phase: -90 .. +90 deg
-```
-
-The UI, frontend JavaScript, and backend API all clamp to these ranges. For the phase-rotation demo, use high SNR (`25..30 dB`) and compare `0 deg`, `50 deg`, and `75 deg`: QPSK should fail as absolute phase crosses its decision boundaries, while QDPSK should remain recoverable for a common fixed phase rotation.
+- The fixed source image must be a `64x64` RGB PNG at `Transmitter/raw_pic_64.png`.
+- UDP sends sampled digital baseband `complex64` IQ after RRC shaping and channel impairment.
+- UDP does not send raw image bytes.
+- UDP does not send the bitstream directly.
+- QPSK and QDPSK are generated and sent together.

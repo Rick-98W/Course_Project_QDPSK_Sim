@@ -12,9 +12,9 @@ PROJECT_DIR = Path(__file__).resolve().parents[1]
 if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 
-from capture import capture_frame
-from frame_buffer import FrameBuffer
-from packet import (
+from core.capture import capture_frame
+from core.frame_buffer import FrameBuffer
+from core.packet import (
     CHANNEL_QDPSK,
     CHANNEL_QPSK,
     HEADER_STRUCT,

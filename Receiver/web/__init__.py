@@ -1,0 +1,1 @@
+"""Receiver web package."""

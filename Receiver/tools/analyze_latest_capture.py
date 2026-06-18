@@ -9,11 +9,11 @@ PROJECT_DIR = Path(__file__).resolve().parents[1]
 if str(PROJECT_DIR) not in sys.path:
     sys.path.insert(0, str(PROJECT_DIR))
 
-from analysis import analyze_latest_capture
+from analysis.analysis import analyze_latest_capture
 
 
 def main() -> int:
-    analyze_latest_capture(PROJECT_DIR / "captures")
+    analyze_latest_capture(PROJECT_DIR / "runtime" / "captures")
     return 0
 
 

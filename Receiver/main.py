@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from receiver_service import ReceiverService
-from web_app import WEB_HOST, WEB_PORT, run_http_server
+from core.receiver_service import ReceiverService
+from web.web_app import WEB_HOST, WEB_PORT, run_http_server
 
 
 def main() -> int:

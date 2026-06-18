@@ -23,10 +23,16 @@ Thumbs.db
 # Receiver generated runtime outputs
 Receiver/captures/
 Receiver/reports/
+Receiver/reference/
+Receiver/exports/
+Receiver/tx_plots/
+Receiver/runtime/
 
 # Transmitter generated plots
 Transmitter/static/generated/
+Transmitter/web/static/generated/
 
 # Matplotlib smoke-test artifacts
 Receiver/matplotlib_smoke*.png
 Receiver/matplotlib_smoke*.svg
+Receiver/scratch/

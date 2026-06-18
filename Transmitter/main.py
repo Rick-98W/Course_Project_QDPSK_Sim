@@ -1,6 +1,6 @@
 """Transmitter entry point."""
 
-from web_app import run_web_app
+from web.web_app import run_web_app
 
 
 def main():

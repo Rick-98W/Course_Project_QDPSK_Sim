@@ -5,6 +5,7 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
 IMAGE_PATH = BASE_DIR / "raw_pic_64.png"
+WEB_DIR = BASE_DIR / "web"
 
 EXPECTED_IMAGE_WIDTH = 64
 EXPECTED_IMAGE_HEIGHT = 64
@@ -20,7 +21,7 @@ WEB_PORT = 8000
 
 SNR_DB = 20.0
 PHASE_DEG = 0.0
-SNR_MIN_DB = 6.0
+SNR_MIN_DB = -3.0
 SNR_MAX_DB = 30.0
 PHASE_MIN_DEG = -90.0
 PHASE_MAX_DEG = 90.0
@@ -31,7 +32,7 @@ RRC_SPAN = 8
 
 RANDOM_SEED = 20260615
 
-GENERATED_DIR = BASE_DIR / "static" / "generated"
+GENERATED_DIR = WEB_DIR / "static" / "generated"
 
 PLOT_CHANNEL = "QDPSK"
 EYE_TRACES = 120
