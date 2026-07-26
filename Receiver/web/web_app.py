@@ -94,6 +94,18 @@ class ReceiverRequestHandler(BaseHTTPRequestHandler):
                 return
             self._send_json(_state_with_urls(self.server.service.snapshot()))
             return
+        if path == "/api/settings":
+            try:
+                payload = self._read_json(4096)
+                self.server.service.update_incomplete_frame_settings(
+                    timeout_sec=payload.get("incomplete_frame_analysis_timeout_sec"),
+                    min_completion_ratio=payload.get("incomplete_frame_min_completion_ratio"),
+                )
+            except Exception as exc:
+                self._send_json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+                return
+            self._send_json(_state_with_urls(self.server.service.snapshot()))
+            return
         if path == "/api/export-latest":
             try:
                 export_path = self.server.service.export_latest_capture()
@@ -186,6 +198,13 @@ class ReceiverRequestHandler(BaseHTTPRequestHandler):
         if length > int(max_bytes):
             raise ValueError("request body is too large")
         return self.rfile.read(length)
+
+    def _read_json(self, max_bytes: int) -> dict:
+        data = self._read_body(max_bytes)
+        payload = json.loads(data.decode("utf-8"))
+        if not isinstance(payload, dict):
+            raise ValueError("JSON body must be an object")
+        return payload
 
     def _send_bytes(
         self,

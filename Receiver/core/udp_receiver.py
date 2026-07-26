@@ -54,6 +54,26 @@ def _print_idle_report(pending: list) -> None:
         print("[IDLE] waiting for first UDP fragments...")
 
 
+def _handle_frame_ready(
+    frame_id: int,
+    channels: dict[int, np.ndarray],
+    should_save_completed_frames: bool,
+    on_frame_complete: Callable[[int, dict[int, np.ndarray], dict[int, Path]], None] | None,
+    forced_progress: list | None = None,
+) -> dict[int, Path]:
+    print_iq_summary(frame_id, channels)
+    outputs: dict[int, Path] = {}
+    if should_save_completed_frames:
+        outputs = capture_frame(frame_id, channels, config.CAPTURE_DIR)
+        print("[CAPTURE] %s" % format_capture_outputs(outputs))
+    if on_frame_complete is not None:
+        try:
+            on_frame_complete(frame_id, channels, outputs, forced_progress=forced_progress)
+        except TypeError:
+            on_frame_complete(frame_id, channels, outputs)
+    return outputs
+
+
 def run_receiver(
     listen_host: str = config.LISTEN_HOST,
     listen_port: int = config.LISTEN_PORT,
@@ -97,6 +117,27 @@ def run_receiver(
                 datagram, address = sock.recvfrom(config.MAX_DATAGRAM_BYTES)
             except socket.timeout:
                 now = time.monotonic()
+                for frame_id in frame_buffer.force_ready_frame_ids(
+                    config.INCOMPLETE_FRAME_ANALYSIS_TIMEOUT_SEC,
+                    config.INCOMPLETE_FRAME_MIN_COMPLETION_RATIO,
+                ):
+                    pending = [
+                        frame
+                        for frame in frame_buffer.pending_frames()
+                        if frame.frame_id == frame_id
+                    ]
+                    for channel_frame in pending:
+                        print("[FRAME FORCED] %s" % channel_frame.progress_line())
+                    channels = frame_buffer.force_reassemble_frame(frame_id)
+                    _handle_frame_ready(
+                        frame_id,
+                        channels,
+                        should_save_completed_frames,
+                        on_frame_complete,
+                        forced_progress=pending,
+                    )
+                    frame_buffer.drop_frame(frame_id)
+
                 if now - last_packet_at >= config.IDLE_DIAGNOSTIC_SEC and now - last_idle_report_at >= config.IDLE_DIAGNOSTIC_SEC:
                     pending = frame_buffer.pending_frames()
                     if on_idle is None:
@@ -149,13 +190,12 @@ def run_receiver(
 
             if frame_buffer.frame_complete(header.frame_id):
                 channels = frame_buffer.get_completed_frame(header.frame_id)
-                print_iq_summary(header.frame_id, channels)
-                outputs: dict[int, Path] = {}
-                if should_save_completed_frames:
-                    outputs = capture_frame(header.frame_id, channels, config.CAPTURE_DIR)
-                    print("[CAPTURE] %s" % format_capture_outputs(outputs))
-                if on_frame_complete is not None:
-                    on_frame_complete(header.frame_id, channels, outputs)
+                _handle_frame_ready(
+                    header.frame_id,
+                    channels,
+                    should_save_completed_frames,
+                    on_frame_complete,
+                )
                 frame_buffer.drop_frame(header.frame_id)
                 if stop_after_complete_frame:
                     break

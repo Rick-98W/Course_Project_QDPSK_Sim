@@ -17,11 +17,7 @@ Receiver/docs/DEMO_RUNBOOK.md
 `DEVELOPMENT_PLAN.md` is historical and should not be used as the source of truth for new work.
 Current Receiver target is an HTML-based GUI desktop app that auto-listens on UDP and refreshes results whenever TX sends again. Static reports are only the current stepping stone.
 
-Use this interpreter for Receiver work:
-
-```text
-F:\programs\miniconda3\envs\QDRSK_RX_PC\python.exe
-```
+Create the receiver environment from the repository root with `environment-rx.yml`, then activate it with `conda activate qdpsk-rx`.
 
 Do not install dependencies automatically. If a package is missing, stop and ask the user to install it in conda.
 
@@ -46,14 +42,16 @@ Start Receiver desktop app:
 
 ```powershell
 cd C:\Users\Rick\PycharmProjects\QDPSK\Receiver
-F:\programs\miniconda3\envs\QDRSK_RX_PC\python.exe desktop_app.py
+conda activate qdpsk-rx
+python desktop_app.py
 ```
 
 Browser debug mode:
 
 ```powershell
 cd C:\Users\Rick\PycharmProjects\QDPSK\Receiver
-F:\programs\miniconda3\envs\QDRSK_RX_PC\python.exe main.py
+conda activate qdpsk-rx
+python main.py
 ```
 
 Both entry points start the UDP listener and local HTTP API together.
@@ -132,7 +130,7 @@ SAVE_COMPLETED_FRAMES = False
 Analyze the latest capture:
 
 ```powershell
-F:\programs\miniconda3\envs\QDRSK_RX_PC\python.exe tools\analyze_latest_capture.py
+python tools\analyze_latest_capture.py
 ```
 
 Expected output includes raw sample count, matched-filter sample count, fixed-timing symbol count, and symbol power for both channels.

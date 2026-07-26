@@ -9,17 +9,19 @@ matplotlib.use("Agg")
 from matplotlib.font_manager import FontProperties
 from matplotlib.textpath import TextPath
 
-LATIN_FONT = "Times New Roman"
-CHINESE_FONT = "SimHei"
+# 换成 Linux 上完美平替的开源字体名称
+LATIN_FONT = "Liberation Serif"      # 平替 Times New Roman
+CHINESE_FONT = "WenQuanYi Zen Hei"   # 平替 SimHei
+
 LATIN_PROP = FontProperties(family=LATIN_FONT)
 CHINESE_PROP = FontProperties(family=CHINESE_FONT)
 
 matplotlib.rcParams.update(
     {
-        "font.family": LATIN_FONT,
+        "font.family": "sans-serif",  # 让系统有个兜底的选择
         "font.serif": [LATIN_FONT],
-        "font.sans-serif": [CHINESE_FONT, "Microsoft YaHei"],
-        "axes.unicode_minus": False,
+        "font.sans-serif": [CHINESE_FONT, "Liberation Serif", "DejaVu Sans"],
+        "axes.unicode_minus": False,  # 解决负号显示为方块的问题
     }
 )
 

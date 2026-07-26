@@ -33,6 +33,7 @@ document.getElementById("startBtn").addEventListener("click", () => postAction("
 document.getElementById("stopBtn").addEventListener("click", () => postAction("/api/stop"));
 document.getElementById("analyzeBtn").addEventListener("click", () => postAction("/api/analyze-latest"));
 document.getElementById("exportBtn").addEventListener("click", exportLatest);
+document.getElementById("settingsBtn").addEventListener("click", updateSettings);
 
 async function postAction(path) {
   try {
@@ -69,6 +70,30 @@ async function exportLatest() {
   }
 }
 
+async function updateSettings() {
+  try {
+    const timeoutSec = Number(document.getElementById("forceTimeoutInput").value);
+    const ratioPercent = Number(document.getElementById("forceRatioInput").value);
+    const response = await fetch("/api/settings", {
+      method: "POST",
+      cache: "no-store",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        incomplete_frame_analysis_timeout_sec: timeoutSec,
+        incomplete_frame_min_completion_ratio: ratioPercent / 100,
+      }),
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload.error || response.statusText);
+    }
+    renderState(payload);
+    document.getElementById("settingsStatus").textContent = "已应用";
+  } catch (error) {
+    showError(String(error));
+  }
+}
+
 function renderState(payload) {
   const status = payload.status || "unknown";
   const statusBadge = document.getElementById("statusBadge");
@@ -89,6 +114,7 @@ function renderState(payload) {
   document.getElementById("referenceStatus").textContent =
     payload.reference_available ? "已接收" : "等待 TX 上传";
   renderTxParams(payload.latest_tx_params || {});
+  renderSettings(payload);
   const referenceImage = document.getElementById("referenceImage");
   if (payload.reference_available) {
     referenceImage.src = withCache("/reference-image");
@@ -106,6 +132,21 @@ function renderState(payload) {
   renderStats(payload.latest_channel_stats || {});
   renderAssets(payload);
   renderError(payload.last_error);
+}
+
+function renderSettings(payload) {
+  const timeout = Number(payload.incomplete_frame_analysis_timeout_sec || 5);
+  const ratio = Number(payload.incomplete_frame_min_completion_ratio || 0.95);
+  const timeoutInput = document.getElementById("forceTimeoutInput");
+  const ratioInput = document.getElementById("forceRatioInput");
+  if (document.activeElement !== timeoutInput) {
+    timeoutInput.value = timeout.toFixed(1);
+  }
+  if (document.activeElement !== ratioInput) {
+    ratioInput.value = (ratio * 100).toFixed(0);
+  }
+  document.getElementById("settingsStatus").textContent =
+    `等待 ${timeout.toFixed(1)}s / ${Math.round(ratio * 100)}%`;
 }
 
 function renderTxParams(params) {

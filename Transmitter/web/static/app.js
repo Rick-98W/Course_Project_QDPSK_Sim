@@ -119,6 +119,7 @@ function applyState(state) {
   elements.snrValue.value = `${Number(config.snr_db).toFixed(1)} dB`;
   elements.phaseValue.value = `${Number(config.phase_deg).toFixed(0)} deg`;
   renderReceiverPushStatus(state.reference_push, state.tx_plot_push);
+
   const image = result.image;
   const modulation = result.modulation;
   const rrc = result.rrc;
@@ -159,6 +160,7 @@ function applyState(state) {
   elements.qdpskEyeCount.textContent = `${qdpskPlots.eye_trace_count} traces`;
   elements.qpskConstellationCount.textContent = `${formatNumber(qpskPlots.constellation_plotted_points)} points`;
   elements.qdpskConstellationCount.textContent = `${formatNumber(qdpskPlots.constellation_plotted_points)} points`;
+
   const hasChannelPlots = Boolean(sendResult.sent);
   elements.qpskImpairedConstellationCount.textContent = hasChannelPlots ? `${formatNumber(qpskPlots.impaired_constellation_points)} points` : "--";
   elements.qdpskImpairedConstellationCount.textContent = hasChannelPlots ? `${formatNumber(qdpskPlots.impaired_constellation_points)} points` : "--";
@@ -171,6 +173,7 @@ function applyState(state) {
   elements.qdpskEyePlot.src = state.plots.qdpsk.eye;
   elements.qpskConstellationPlot.src = state.plots.qpsk.constellation;
   elements.qdpskConstellationPlot.src = state.plots.qdpsk.constellation;
+
   for (const panel of elements.channelPlots) {
     panel.classList.toggle("pending", !hasChannelPlots);
   }
@@ -226,7 +229,7 @@ function renderReceiverPushStatus(referencePush, txPlotPush) {
   const txPlotText = txPlotPush && txPlotPush.ok
     ? "发端图已发送"
     : `发端图失败：${(txPlotPush && (txPlotPush.error || txPlotPush.status)) || "unknown"}`;
-  elements.referencePushStatus.textContent = `${referenceText}；${txPlotText}`;
+  elements.referencePushStatus.textContent = `${referenceText}，${txPlotText}`;
 }
 
 async function refreshState() {

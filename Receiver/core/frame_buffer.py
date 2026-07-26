@@ -3,10 +3,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import time
 
 import numpy as np
 
-from core.packet import CHANNEL_NAMES, FragmentHeader, PacketError, payload_to_complex64
+from core.packet import (
+    CHANNEL_NAMES,
+    COMPLEX64_BYTES_PER_SAMPLE,
+    FragmentHeader,
+    PacketError,
+    payload_to_complex64,
+)
 
 
 @dataclass
@@ -19,6 +26,7 @@ class ChannelFrame:
     duplicate_chunks: int = 0
     last_reported_chunks: int = 0
     last_reported_percent: int = 0
+    last_fragment_at: float = field(default_factory=time.monotonic)
 
     @property
     def channel_name(self) -> str:
@@ -29,11 +37,16 @@ class ChannelFrame:
         return len(self.chunks)
 
     @property
+    def completion_ratio(self) -> float:
+        return self.received_count / self.chunk_count if self.chunk_count else 0.0
+
+    @property
     def is_complete(self) -> bool:
         return self.received_count == self.chunk_count
 
     def add_fragment(self, header: FragmentHeader, payload: bytes) -> bool:
         self._validate_header_consistency(header)
+        self.last_fragment_at = time.monotonic()
         if header.chunk_index in self.chunks:
             self.duplicate_chunks += 1
             return False
@@ -113,11 +126,30 @@ class ChannelFrame:
             )
         return b"".join(self.chunks[index] for index in range(self.chunk_count))
 
+    def reassemble_payload_with_zero_fill(self) -> bytes:
+        parts = []
+        for index in range(self.chunk_count):
+            chunk = self.chunks.get(index)
+            if chunk is None:
+                samples = min(175, max(0, self.total_samples - index * 175))
+                chunk = b"\x00" * (samples * COMPLEX64_BYTES_PER_SAMPLE)
+            parts.append(chunk)
+        return b"".join(parts)
+
     def reassemble_iq(self) -> np.ndarray:
         iq = payload_to_complex64(self.reassemble_payload())
         if len(iq) != self.total_samples:
             raise PacketError(
                 "sample count mismatch for frame=%d channel=%s: %d vs %d"
+                % (self.frame_id, self.channel_name, len(iq), self.total_samples)
+            )
+        return iq
+
+    def reassemble_iq_with_zero_fill(self) -> np.ndarray:
+        iq = payload_to_complex64(self.reassemble_payload_with_zero_fill())
+        if len(iq) != self.total_samples:
+            raise PacketError(
+                "sample count mismatch for zero-filled frame=%d channel=%s: %d vs %d"
                 % (self.frame_id, self.channel_name, len(iq), self.total_samples)
             )
         return iq
@@ -157,6 +189,33 @@ class FrameBuffer:
             channel_id: self.frames[(frame_id, channel_id)].reassemble_iq()
             for channel_id in self.expected_channels
         }
+
+    def force_reassemble_frame(self, frame_id: int) -> dict[int, np.ndarray]:
+        if not all((frame_id, channel_id) in self.frames for channel_id in self.expected_channels):
+            raise PacketError("frame_id=%d is not present for all channels" % frame_id)
+        return {
+            channel_id: self.frames[(frame_id, channel_id)].reassemble_iq_with_zero_fill()
+            for channel_id in self.expected_channels
+        }
+
+    def force_ready_frame_ids(self, idle_sec: float, min_completion_ratio: float) -> list[int]:
+        now = time.monotonic()
+        frame_ids = sorted({frame.frame_id for frame in self.frames.values()})
+        ready = []
+        for frame_id in frame_ids:
+            channel_frames = [
+                self.frames.get((frame_id, channel_id))
+                for channel_id in self.expected_channels
+            ]
+            if any(frame is None for frame in channel_frames):
+                continue
+            if all(frame.is_complete for frame in channel_frames):
+                continue
+            if min(frame.completion_ratio for frame in channel_frames) < min_completion_ratio:
+                continue
+            if now - max(frame.last_fragment_at for frame in channel_frames) >= idle_sec:
+                ready.append(frame_id)
+        return ready
 
     def drop_frame(self, frame_id: int) -> None:
         for channel_id in self.expected_channels:

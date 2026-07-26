@@ -1,4 +1,4 @@
-# Python caches
+﻿# Python caches
 __pycache__/
 *.py[cod]
 *$py.class
@@ -27,10 +27,17 @@ Receiver/reference/
 Receiver/exports/
 Receiver/tx_plots/
 Receiver/runtime/
+Receiver/build/
+Receiver/dist/
 
 # Transmitter generated plots
 Transmitter/static/generated/
 Transmitter/web/static/generated/
+Transmitter/build/
+Transmitter/dist/
+
+# Local course drafts
+report_draft/
 
 # Matplotlib smoke-test artifacts
 Receiver/matplotlib_smoke*.png

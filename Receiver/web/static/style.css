@@ -103,6 +103,7 @@ main {
 
 .metric,
 .actions,
+.settings-strip,
 .network-strip,
 .progress-panel,
 figure,
@@ -136,6 +137,39 @@ figure,
   flex-wrap: wrap;
   gap: 8px;
   padding: 12px;
+}
+
+.settings-strip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px;
+}
+
+.settings-strip div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-strip label,
+.settings-strip span,
+.settings-strip strong {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.settings-strip input {
+  width: 82px;
+  min-height: 36px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--text);
+  background: #fff;
+  font-family: var(--font-main);
+  font-size: 15px;
 }
 
 .network-strip {

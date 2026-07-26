@@ -1,0 +1,7 @@
+﻿name: QDPSK_TX_ELB
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - numpy=2.2
+  - matplotlib=3.10

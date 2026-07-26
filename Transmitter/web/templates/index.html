@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,7 +10,7 @@
     <main class="shell">
       <header class="topbar">
         <div>
-          <h1>发射端</h1>
+          <h1>QDPSK 发射端</h1>
           <p id="status-line">加载中</p>
         </div>
         <div class="target">
@@ -28,7 +28,7 @@
           <div class="source-wrap">
             <img id="source-image" alt="raw_pic_64.png">
           </div>
-          <p id="reference-push-status" class="small-status">发送时同步参考图到 RX</p>
+          <p id="reference-push-status" class="small-status">发送时同步参考图和发端图到 RX</p>
         </article>
 
         <article class="panel controls-panel">
@@ -41,7 +41,7 @@
             <input id="target-host" type="text" autocomplete="off">
           </label>
           <label class="input-row">
-            <span>目标端口</span>
+            <span>端口</span>
             <input id="target-port" type="number" min="1" max="65535" step="1">
           </label>
           <label class="slider-row">
@@ -56,11 +56,11 @@
           </label>
           <div class="preset-row" aria-label="phase presets">
             <span>Phase Presets</span>
-            <button class="preset-button" type="button" data-phase="0">0°</button>
-            <button class="preset-button" type="button" data-phase="30">30°</button>
-            <button class="preset-button" type="button" data-phase="50">50°</button>
-            <button class="preset-button" type="button" data-phase="75">75°</button>
-            <button class="preset-button" type="button" data-phase="-75">-75°</button>
+            <button class="preset-button" type="button" data-phase="0">0 deg</button>
+            <button class="preset-button" type="button" data-phase="30">30 deg</button>
+            <button class="preset-button" type="button" data-phase="50">50 deg</button>
+            <button class="preset-button" type="button" data-phase="75">75 deg</button>
+            <button class="preset-button" type="button" data-phase="-75">-75 deg</button>
           </div>
           <div class="button-row">
             <button id="render-button" type="button">重绘图表</button>
@@ -92,88 +92,85 @@
         </article>
       </section>
 
-      <section class="plot-grid">
-        <article class="plot-panel plot-header">
-          <h2>QPSK</h2>
-        </article>
-        <article class="plot-panel plot-header">
-          <h2>QDPSK</h2>
-        </article>
+      <section class="plot-section">
+        <div class="plot-row plot-row-four">
+          <article class="plot-panel channel-plot">
+            <div class="panel-heading">
+              <h2>QPSK 信道后采样星座图</h2>
+              <span id="qpsk-impaired-constellation-count">--</span>
+            </div>
+            <img id="qpsk-impaired-constellation-plot" alt="QPSK channel-impaired constellation">
+          </article>
+          <article class="plot-panel channel-plot">
+            <div class="panel-heading">
+              <h2>QDPSK 信道后采样星座图</h2>
+              <span id="qdpsk-impaired-constellation-count">--</span>
+            </div>
+            <img id="qdpsk-impaired-constellation-plot" alt="QDPSK channel-impaired constellation">
+          </article>
+          <article class="plot-panel">
+            <div class="panel-heading">
+              <h2>QPSK 信道前基带星座图</h2>
+              <span id="qpsk-constellation-count">--</span>
+            </div>
+            <img id="qpsk-constellation-plot" alt="QPSK clean transmit constellation">
+          </article>
+          <article class="plot-panel">
+            <div class="panel-heading">
+              <h2>QDPSK 信道前基带星座图</h2>
+              <span id="qdpsk-constellation-count">--</span>
+            </div>
+            <img id="qdpsk-constellation-plot" alt="QDPSK clean transmit constellation">
+          </article>
+        </div>
 
-        <article class="plot-panel channel-plot">
-          <div class="panel-heading">
-            <h2>信道后星座图</h2>
-            <span id="qpsk-impaired-constellation-count">--</span>
-          </div>
-          <img id="qpsk-impaired-constellation-plot" alt="QPSK channel-impaired constellation">
-        </article>
-        <article class="plot-panel channel-plot">
-          <div class="panel-heading">
-            <h2>信道后星座图</h2>
-            <span id="qdpsk-impaired-constellation-count">--</span>
-          </div>
-          <img id="qdpsk-impaired-constellation-plot" alt="QDPSK channel-impaired constellation">
-        </article>
+        <div class="plot-row plot-row-four">
+          <article class="plot-panel channel-plot">
+            <div class="panel-heading">
+              <h2>QPSK 信道后采样眼图</h2>
+              <span id="qpsk-impaired-eye-count">--</span>
+            </div>
+            <img id="qpsk-impaired-eye-plot" alt="QPSK channel-impaired eye diagram">
+          </article>
+          <article class="plot-panel channel-plot">
+            <div class="panel-heading">
+              <h2>QDPSK 信道后采样眼图</h2>
+              <span id="qdpsk-impaired-eye-count">--</span>
+            </div>
+            <img id="qdpsk-impaired-eye-plot" alt="QDPSK channel-impaired eye diagram">
+          </article>
+          <article class="plot-panel">
+            <div class="panel-heading">
+              <h2>QPSK 信道前基带眼图</h2>
+              <span id="qpsk-eye-count">--</span>
+            </div>
+            <img id="qpsk-eye-plot" alt="QPSK transmit baseband eye diagram">
+          </article>
+          <article class="plot-panel">
+            <div class="panel-heading">
+              <h2>QDPSK 信道前基带眼图</h2>
+              <span id="qdpsk-eye-count">--</span>
+            </div>
+            <img id="qdpsk-eye-plot" alt="QDPSK transmit baseband eye diagram">
+          </article>
+        </div>
 
-        <article class="plot-panel channel-plot">
-          <div class="panel-heading">
-            <h2>信道后眼图</h2>
-            <span id="qpsk-impaired-eye-count">--</span>
-          </div>
-          <img id="qpsk-impaired-eye-plot" alt="QPSK channel-impaired eye diagram">
-        </article>
-        <article class="plot-panel channel-plot">
-          <div class="panel-heading">
-            <h2>信道后眼图</h2>
-            <span id="qdpsk-impaired-eye-count">--</span>
-          </div>
-          <img id="qdpsk-impaired-eye-plot" alt="QDPSK channel-impaired eye diagram">
-        </article>
-
-        <article class="plot-panel">
-          <div class="panel-heading">
-            <h2>信道前基带功率谱</h2>
-            <span id="qpsk-psd-count">--</span>
-          </div>
-          <img id="qpsk-psd-plot" alt="QPSK transmit baseband power spectral density">
-        </article>
-        <article class="plot-panel">
-          <div class="panel-heading">
-            <h2>信道前基带功率谱</h2>
-            <span id="qdpsk-psd-count">--</span>
-          </div>
-          <img id="qdpsk-psd-plot" alt="QDPSK transmit baseband power spectral density">
-        </article>
-
-        <article class="plot-panel">
-          <div class="panel-heading">
-            <h2>信道前基带眼图</h2>
-            <span id="qpsk-eye-count">--</span>
-          </div>
-          <img id="qpsk-eye-plot" alt="QPSK transmit baseband eye diagram">
-        </article>
-        <article class="plot-panel">
-          <div class="panel-heading">
-            <h2>信道前基带眼图</h2>
-            <span id="qdpsk-eye-count">--</span>
-          </div>
-          <img id="qdpsk-eye-plot" alt="QDPSK transmit baseband eye diagram">
-        </article>
-
-        <article class="plot-panel">
-          <div class="panel-heading">
-            <h2>信道前星座图</h2>
-            <span id="qpsk-constellation-count">--</span>
-          </div>
-          <img id="qpsk-constellation-plot" alt="QPSK clean transmit constellation">
-        </article>
-        <article class="plot-panel">
-          <div class="panel-heading">
-            <h2>信道前星座图</h2>
-            <span id="qdpsk-constellation-count">--</span>
-          </div>
-          <img id="qdpsk-constellation-plot" alt="QDPSK clean transmit constellation">
-        </article>
+        <div class="plot-row plot-row-two">
+          <article class="plot-panel">
+            <div class="panel-heading">
+              <h2>QPSK 信道前基带功率谱</h2>
+              <span id="qpsk-psd-count">--</span>
+            </div>
+            <img id="qpsk-psd-plot" alt="QPSK transmit baseband power spectral density">
+          </article>
+          <article class="plot-panel">
+            <div class="panel-heading">
+              <h2>QDPSK 信道前基带功率谱</h2>
+              <span id="qdpsk-psd-count">--</span>
+            </div>
+            <img id="qdpsk-psd-plot" alt="QDPSK transmit baseband power spectral density">
+          </article>
+        </div>
       </section>
     </main>
 

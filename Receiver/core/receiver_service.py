@@ -111,6 +111,12 @@ class ReceiverServiceState:
             "latest_channel_stats": dict(self.latest_channel_stats),
             "first_header": self.first_header,
             "last_error": self.last_error,
+            "incomplete_frame_analysis_timeout_sec": float(
+                config.INCOMPLETE_FRAME_ANALYSIS_TIMEOUT_SEC
+            ),
+            "incomplete_frame_min_completion_ratio": float(
+                config.INCOMPLETE_FRAME_MIN_COMPLETION_RATIO
+            ),
             "progress": {
                 str(channel_id): progress.to_dict()
                 for channel_id, progress in sorted(self.progress.items())
@@ -178,6 +184,20 @@ class ReceiverService:
     def snapshot(self) -> dict:
         with self._lock:
             return self._state.to_dict()
+
+    def update_incomplete_frame_settings(
+        self,
+        timeout_sec: float | None = None,
+        min_completion_ratio: float | None = None,
+    ) -> dict:
+        if timeout_sec is not None:
+            config.INCOMPLETE_FRAME_ANALYSIS_TIMEOUT_SEC = max(0.5, min(30.0, float(timeout_sec)))
+        if min_completion_ratio is not None:
+            config.INCOMPLETE_FRAME_MIN_COMPLETION_RATIO = max(
+                0.50,
+                min(1.0, float(min_completion_ratio)),
+            )
+        return self.snapshot()
 
     def analyze_latest_capture(self) -> CaptureAnalysisBundle:
         with self._lock:
@@ -272,6 +292,7 @@ class ReceiverService:
         frame_id: int,
         channels: dict[int, np.ndarray],
         outputs: dict[int, Path],
+        forced_progress: list | None = None,
     ) -> None:
         capture_dir = _capture_dir_from_outputs(outputs)
         with self._lock:
@@ -279,18 +300,36 @@ class ReceiverService:
             self._state.latest_frame_id = frame_id
             self._state.last_frame_completed_at = time.time()
             self._state.latest_capture_dir = str(capture_dir) if capture_dir else None
-            self._state.progress = {
-                channel_id: ChannelProgressState(
-                    frame_id=frame_id,
-                    channel_id=channel_id,
-                    channel_name=CHANNEL_NAMES.get(channel_id, "UNKNOWN"),
-                    received_chunks=config.EXPECTED_CHUNK_COUNT,
-                    chunk_count=config.EXPECTED_CHUNK_COUNT,
-                    percent=100.0,
-                    duplicate_chunks=0,
+            if forced_progress:
+                self._state.progress = {
+                    frame.channel_id: ChannelProgressState(
+                        frame_id=frame_id,
+                        channel_id=frame.channel_id,
+                        channel_name=frame.channel_name,
+                        received_chunks=frame.received_count,
+                        chunk_count=frame.chunk_count,
+                        percent=(frame.received_count * 100.0) / frame.chunk_count,
+                        duplicate_chunks=frame.duplicate_chunks,
+                    )
+                    for frame in forced_progress
+                }
+                self._state.last_error = (
+                    "Incomplete frame forced to analysis after %.1fs; missing chunks were zero-filled."
+                    % config.INCOMPLETE_FRAME_ANALYSIS_TIMEOUT_SEC
                 )
-                for channel_id in channels
-            }
+            else:
+                self._state.progress = {
+                    channel_id: ChannelProgressState(
+                        frame_id=frame_id,
+                        channel_id=channel_id,
+                        channel_name=CHANNEL_NAMES.get(channel_id, "UNKNOWN"),
+                        received_chunks=config.EXPECTED_CHUNK_COUNT,
+                        chunk_count=config.EXPECTED_CHUNK_COUNT,
+                        percent=100.0,
+                        duplicate_chunks=0,
+                    )
+                    for channel_id in channels
+                }
         if self.auto_analyze and capture_dir is not None:
             with self._lock:
                 self._state.status = "analyzing"
